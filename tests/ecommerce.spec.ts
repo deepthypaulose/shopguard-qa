@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { EcommercePage } from '../pages/EcommercePage';
 
 test('user can search for a product', async ({ page }) => {
   await page.goto('/practice-ecommerece-website');
@@ -142,6 +143,7 @@ test('cart calculates total based on product quantity', async ({ page }) => {
 });
 
 test('customer can complete checkout', async ({ page }) => {
+  const shop = new EcommercePage(page);
   const shippingAddress = {
     fullName: 'Test User',
     street: '123 Test Street',
@@ -156,55 +158,43 @@ test('customer can complete checkout', async ({ page }) => {
     cvv: '123',
   };
   // 1. Open shop
-  await page.goto('/practice-ecommerece-website');
+  await shop.goto();
 
-  // 2. Find Laptop Pro
-  const laptopCard = page
-    .locator('[data-testid^="product-card-"]')
-    .filter({ hasText: 'Laptop Pro' });
+  // 2. Add Laptop Pro to cart
 
-  // 3. Add it to cart
-  await laptopCard.getByRole('button', { name: 'Add to Cart' }).click();
+  await shop.addProductToCart('Laptop Pro');
 
-  // 4. Open cart
-  await page.getByTestId('ecom-cart-button').click();
+  // 3. Open cart
+  await shop.openCart();
 
-  // 5. Proceed to checkout
-  await page.getByTestId('ecom-proceed-to-buy').click();
+  // 4. Proceed to checkout
+  await shop.proceedToCheckout();
 
   // 6. Fill shipping address
-  await page.getByTestId('ecom-address-name').fill(shippingAddress.fullName);
+  await shop.fillShippingAddress(shippingAddress);
 
   await expect(page.getByTestId('ecom-address-name')).toHaveValue(
     shippingAddress.fullName,
   );
 
-  await page.getByTestId('ecom-address-street').fill(shippingAddress.street);
-
   await expect(page.getByTestId('ecom-address-street')).toHaveValue(
     shippingAddress.street,
   );
-
-  await page.getByTestId('ecom-address-city').fill(shippingAddress.city);
 
   await expect(page.getByTestId('ecom-address-city')).toHaveValue(
     shippingAddress.city,
   );
 
-  await page.getByTestId('ecom-address-state').fill(shippingAddress.state);
-
   await expect(page.getByTestId('ecom-address-state')).toHaveValue(
     shippingAddress.state,
   );
-
-  await page.getByTestId('ecom-address-zip').fill(shippingAddress.zipCode);
 
   await expect(page.getByTestId('ecom-address-zip')).toHaveValue(
     shippingAddress.zipCode,
   );
 
   // 7. Continue to payment
-  await page.getByTestId('ecom-save-address').click();
+  await shop.continueToPayment();
 
   // Verify that payment screen opened
   await expect(
@@ -212,14 +202,10 @@ test('customer can complete checkout', async ({ page }) => {
   ).toBeVisible();
 
   // Fill payment details
-  await page.getByTestId('ecom-card-number').fill(paymentDetails.cardNumber);
-
-  await page.getByTestId('ecom-expiry').fill(paymentDetails.expiry);
-
-  await page.getByTestId('ecom-cvv').fill(paymentDetails.cvv);
+  await shop.fillPaymentDetails(paymentDetails);
 
   // Buy
-  await page.getByTestId('ecom-buy-now').click();
+  await shop.buyNow();
 
   // Verify successful order
   await expect(
